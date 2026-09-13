@@ -1,0 +1,27 @@
+model_id: Qwen/Qwen3.5-0.8B
+out_dir: outputs/kris-sft
+
+# data: local jsonl by default, or set dataset_id for Hub
+data_path: data/sample.jsonl
+dataset_id: "" # e.g. "trl-lib/Capybara"
+dataset_split: "train[:500]"
+messages_field: messages
+
+# reasoning format
+max_len: 1024
+think_tags: true # wrap CoT in <think>...</think>
+
+# lora
+lora_r: 16
+lora_alpha: 32
+lora_dropout: 0.05
+targets: [q_proj, k_proj, v_proj, o_proj]
+
+# optim
+lr: 2.0e-4
+epochs: 3
+batch: 1
+grad_accum: 8
+
+# hub (empty = local only)
+hub_id: ""

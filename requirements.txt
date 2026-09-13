@@ -1,0 +1,10 @@
+torch>=2.2
+transformers>=4.56
+trl>=0.12
+peft>=0.10
+datasets>=3.0
+accelerate>=0.24
+safetensors
+huggingface_hub>=0.23
+python-dotenv
+pyyaml
