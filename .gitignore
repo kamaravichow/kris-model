@@ -1,5 +1,23 @@
+# python
 .venv/
-outputs/
 __pycache__/
 *.pyc
+*.pyo
+# env / secrets
 .env
+.env.*
+# macOS
+.DS_Store
+**/.DS_Store
+# training artifacts (regenerable / large)
+outputs/
+logs/
+*.log
+model/
+*.safetensors
+*.bin
+*.pt
+# generated / intermediate data (regenerable via gen.sh / prepare_mlx_data.py)
+data/raw/
+data_mlx/
+*.zip

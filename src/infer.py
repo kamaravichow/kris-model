@@ -8,7 +8,8 @@ from transformers import AutoModelForImageTextToText, AutoTokenizer
 
 base = os.getenv("MODEL", "Qwen/Qwen3.5-0.8B")
 adapter = os.getenv("ADAPTER", "outputs/kris-sft")
-device = "mps" if torch.backends.mps.is_available() else "cpu"
+# CPU-forced: MPS weight load segfaults on this torch/Python build (see train.py).
+device = "cpu"
 
 tok = AutoTokenizer.from_pretrained(base, use_fast=True)
 model = AutoModelForImageTextToText.from_pretrained(base, torch_dtype=torch.float32).to(

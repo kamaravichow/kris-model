@@ -1,0 +1,29 @@
+# MLX LoRA fine-tune for Qwen3.5-0.8B on Apple Silicon.
+# Mirrors configs/train.yaml: r=16, alpha=32 (scale=alpha/r=2.0), lr=2e-4,
+# ~3 epochs parity (120 ex / batch 4 -> 30 steps/epoch -> iters 90).
+# Base: 4-bit MLX quant of the same Qwen/Qwen3.5-0.8B (QLoRA).
+model: mlx-community/Qwen3.5-0.8B-MLX-4bit
+train: true
+fine_tune_type: lora
+data: data_mlx
+seed: 42
+
+num_layers: 24 # Qwen3.5-0.8B has 24 blocks; covers all (PEFT parity)
+batch_size: 1
+iters: 90
+val_batches: 10
+learning_rate: 2.0e-4
+steps_per_report: 5
+steps_per_eval: 45
+save_every: 45
+max_seq_length: 1024
+grad_accumulation_steps: 4 # effective batch 4 (OOM-safe on 24GB unified mem)
+grad_checkpoint: true # OOM-safe; small speed cost
+mask_prompt: true # train on assistant tokens (chat SFT)
+
+lora_parameters:
+  rank: 16
+  scale: 2.0
+  dropout: 0.05
+
+adapter_path: outputs/kris-mlx

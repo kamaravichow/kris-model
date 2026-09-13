@@ -1,0 +1,18 @@
+# teacher: DeepSeek official API (thinking via reasoning_content)
+model: deepseek-reasoner
+url: https://api.deepseek.com/chat/completions
+# stage A: situational corpus (format x topic, active voice, first person)
+# stage B: sentence clusters -> filler clean, thinking captured
+n: 200
+out: data/filler.jsonl
+raw: data/raw
+cluster: 2 # sentences per clean call
+seed: 7
+# stage A source: "" = model-generated situational corpuses,
+# or a folder of your own transcript files (.txt/.md) to clean instead
+corpus_dir: "" # e.g. data/transcripts
+exts: .txt,.md
+clean_effort: high # DeepSeek reasoning effort for sentence -> clean calls (low|high|max)
+# $ per 1M tokens (deepseek-reasoner official rate)
+in_per_m: 0.55
+out_per_m: 2.19

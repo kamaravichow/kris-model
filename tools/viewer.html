@@ -1,0 +1,419 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>filler viewer</title>
+    <style>
+      :root {
+        --bg: #0f1115;
+        --card: #171a21;
+        --line: #262b36;
+        --tx: #e8eaf0;
+        --mut: #9aa3b2;
+        --acc: #6ea8fe;
+        --ok: #7ee2a8;
+        --bad: #ff9a9a;
+      }
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        margin: 0;
+        background: var(--bg);
+        color: var(--tx);
+        font:
+          14px/1.55 system-ui,
+          sans-serif;
+      }
+      .wrap {
+        max-width: 1080px;
+        margin: 0 auto;
+        padding: 20px;
+      }
+      .top {
+        display: flex;
+        gap: 10px;
+        align-items: center;
+        flex-wrap: wrap;
+        margin-bottom: 12px;
+      }
+      h1 {
+        font-size: 18px;
+        margin: 0;
+      }
+      .sub {
+        color: var(--mut);
+        font-size: 12px;
+      }
+      .bar {
+        display: flex;
+        gap: 8px;
+        flex-wrap: wrap;
+        align-items: center;
+        background: var(--card);
+        border: 1px solid var(--line);
+        border-radius: 12px;
+        padding: 10px 12px;
+        margin-bottom: 12px;
+      }
+      button,
+      input,
+      select {
+        background: #222838;
+        border: 1px solid var(--line);
+        color: var(--tx);
+        border-radius: 8px;
+        padding: 7px 12px;
+        font-size: 13px;
+      }
+      button {
+        cursor: pointer;
+      }
+      button:hover {
+        filter: brightness(1.2);
+      }
+      button.pri {
+        background: var(--acc);
+        border-color: var(--acc);
+        color: #0b1220;
+        font-weight: 600;
+      }
+      button.on {
+        outline: 2px solid var(--acc);
+      }
+      .grid {
+        display: grid;
+        grid-template-columns: 250px 1fr;
+        gap: 12px;
+      }
+      @media (max-width: 820px) {
+        .grid {
+          grid-template-columns: 1fr;
+        }
+      }
+      .list {
+        background: var(--card);
+        border: 1px solid var(--line);
+        border-radius: 12px;
+        padding: 8px;
+        max-height: 74vh;
+        overflow: auto;
+      }
+      .it {
+        padding: 8px;
+        border-radius: 8px;
+        cursor: pointer;
+        font-size: 12px;
+        color: var(--mut);
+        border: 1px solid transparent;
+      }
+      .it b {
+        color: var(--tx);
+      }
+      .it.sel {
+        background: #0c0e12;
+        border-color: var(--acc);
+      }
+      .it.flag b::after {
+        content: " ⚑";
+        color: var(--bad);
+      }
+      .card {
+        background: var(--card);
+        border: 1px solid var(--line);
+        border-radius: 12px;
+        padding: 16px;
+      }
+      .lbl {
+        font-size: 11px;
+        color: var(--mut);
+        text-transform: uppercase;
+        letter-spacing: 0.06em;
+        margin: 14px 0 6px;
+      }
+      .lbl:first-child {
+        margin-top: 0;
+      }
+      .box {
+        background: #0c0e12;
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        padding: 12px;
+        white-space: pre-wrap;
+      }
+      .think {
+        border-left: 3px solid var(--acc);
+        font:
+          12.5px/1.6 ui-monospace,
+          monospace;
+        color: #c9d4e8;
+      }
+      .ans {
+        font-size: 15px;
+      }
+      .sys {
+        color: var(--mut);
+        font-size: 12.5px;
+      }
+      .chips {
+        display: flex;
+        gap: 6px;
+        flex-wrap: wrap;
+        margin-top: 8px;
+      }
+      .chip {
+        font-size: 11px;
+        background: #222838;
+        border: 1px solid var(--line);
+        border-radius: 20px;
+        padding: 2px 9px;
+        color: var(--bad);
+      }
+      .meta {
+        display: flex;
+        gap: 14px;
+        flex-wrap: wrap;
+        font-size: 12px;
+        color: var(--mut);
+      }
+      .meta b {
+        color: var(--tx);
+      }
+      .nav {
+        display: flex;
+        gap: 8px;
+        align-items: center;
+        margin-left: auto;
+      }
+      .kbd {
+        font-size: 11px;
+        color: var(--mut);
+      }
+      mark {
+        background: #3a2b00;
+        color: #ffd88a;
+        border-radius: 3px;
+        padding: 0 2px;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="wrap">
+      <div class="top">
+        <h1>filler viewer</h1>
+        <span class="sub" id="stat">0 rows</span>
+        <div class="nav">
+          <button id="prev">← Prev</button><span id="pos" class="kbd"></span
+          ><button id="next" class="pri">Next →</button>
+        </div>
+      </div>
+      <div class="bar">
+        <button id="open" class="pri">Open .jsonl</button
+        ><input type="file" id="file" accept=".jsonl,.json" hidden />
+        <input
+          id="q"
+          placeholder="filter… (user / answer / think)"
+          style="flex: 1; min-width: 160px"
+        />
+        <button id="tThink" class="on">think</button
+        ><button id="tDiff" class="on">diff</button>
+        <button id="flag">⚑ flag</button><button id="exp">Export flags</button>
+      </div>
+      <div class="grid">
+        <div class="list" id="list"></div>
+        <div class="card">
+          <div class="meta" id="meta"></div>
+          <div class="lbl">user (input)</div>
+          <div class="box" id="user"></div>
+          <div class="chips" id="chips"></div>
+          <div class="lbl">assistant — final answer</div>
+          <div class="box ans" id="ans"></div>
+          <div class="lbl">
+            assistant — &lt;think&gt; <span class="kbd"> (T to toggle)</span>
+          </div>
+          <div class="box think" id="think"></div>
+          <div class="lbl">system</div>
+          <div class="box sys" id="sys"></div>
+        </div>
+      </div>
+      <p class="kbd">
+        ←/→ navigate · T think · D diff · F flag · drop a .jsonl anywhere to
+        load
+      </p>
+    </div>
+    <script>
+      const $ = (id) => document.getElementById(id);
+      let rows = [],
+        idx = 0,
+        flags = new Set(
+          JSON.parse(localStorage.getItem("filler-flags") || "[]"),
+        );
+      let showThink = true,
+        showDiff = true,
+        query = "";
+      const FILLER =
+        /\b(um+|uh+|ah+|er+|em+|like|you know|i mean|sort of|kind of|basically|actually|literally|just|well|right|so|anyway|oh|hey guys|hmm)\b/gi;
+      const parse = (a) => {
+        const m = (a || "").match(/<think>([\s\S]*?)<\/think>\s*([\s\S]*)/);
+        return m
+          ? { t: m[1].trim(), a: m[2].trim() }
+          : { t: "", a: (a || "").trim() };
+      };
+      const esc = (s) =>
+        s.replace(
+          /[&<>"]/g,
+          (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c],
+        );
+      async function load(text) {
+        rows = text
+          .trim()
+          .split("\n")
+          .filter(Boolean)
+          .map((l) => {
+            try {
+              return JSON.parse(l);
+            } catch {
+              return null;
+            }
+          })
+          .filter(Boolean);
+        idx = 0;
+        render();
+      }
+      function filtered() {
+        if (!query) return rows.map((r, i) => i);
+        const q = query.toLowerCase();
+        return rows
+          .map((r, i) => i)
+          .filter((i) => {
+            const p = parse(rows[i].messages?.[2]?.content || "");
+            return (rows[i].messages?.[1]?.content + " " + p.a + " " + p.t)
+              .toLowerCase()
+              .includes(q);
+          });
+      }
+      function render() {
+        const F = filtered();
+        if (!F.includes(idx)) idx = F[0] ?? 0;
+        $("stat").textContent = `${rows.length} rows · ${flags.size} flagged`;
+        if (!rows.length) {
+          $("pos").textContent = "—";
+          return;
+        }
+        const r = rows[idx],
+          m = r.messages || [],
+          sys = m[0]?.content || "",
+          usr = m[1]?.content || "",
+          p = parse(m[2]?.content || "");
+        $("pos").textContent =
+          `${F.indexOf(idx) + 1}/${F.length}  (#${idx + 1})`;
+        $("sys").textContent = sys;
+        $("think").textContent = p.t || "(no <think>)";
+        $("think").style.display = showThink ? "" : "none";
+        $("ans").innerHTML = esc(p.a);
+        let uhtml = esc(usr);
+        if (showDiff) {
+          const kept = new Set(p.a.toLowerCase().match(/[a-z'’-]+/g) || []);
+          uhtml = esc(usr).replace(/[A-Za-z'’-]+/g, (w) =>
+            kept.has(w.toLowerCase()) ? w : `<mark>${w}</mark>`,
+          );
+        }
+        $("user").innerHTML = uhtml;
+        const rm = (usr.match(FILLER) || []).filter(
+          (w) => !p.a.toLowerCase().includes(w.toLowerCase()),
+        );
+        $("chips").innerHTML =
+          [...new Set(rm.map((s) => s.toLowerCase()))]
+            .map((s) => `<span class="chip">− ${esc(s)}</span>`)
+            .join("") || `<span class="kbd">no filler leftovers</span>`;
+        const uw = (usr.match(/\S+/g) || []).length,
+          aw = (p.a.match(/\S+/g) || []).length;
+        $("meta").innerHTML =
+          `<span>#<b>${idx + 1}</b></span><span>user <b>${uw}</b>w</span><span>answer <b>${aw}</b>w</span><span>cut <b>${uw ? Math.round((1 - aw / uw) * 100) : 0}%</b></span><span>think <b>${(p.t.match(/\S+/g) || []).length}</b>w</span><span>${flags.has(idx) ? "<b style='color:var(--bad)'>⚑ flagged</b>" : ""}</span>`;
+        $("list").innerHTML = F.map((i) => {
+          const q2 = rows[i].messages?.[1]?.content || "";
+          return `<div class="it${i === idx ? " sel" : ""}${flags.has(i) ? " flag" : ""}" data-i="${i}"><b>#${i + 1}</b> ${esc(q2.slice(0, 90))}</div>`;
+        }).join("");
+        document.querySelectorAll(".it").forEach(
+          (el) =>
+            (el.onclick = () => {
+              idx = +el.dataset.i;
+              render();
+            }),
+        );
+        const sel = document.querySelector(".it.sel");
+        if (sel) sel.scrollIntoView({ block: "nearest" });
+        localStorage.setItem("filler-flags", JSON.stringify([...flags]));
+      }
+      $("prev").onclick = () => step(-1);
+      $("next").onclick = () => step(1);
+      function step(d) {
+        const F = filtered();
+        if (!F.length) return;
+        let p = F.indexOf(idx);
+        p = (p + d + F.length) % F.length;
+        idx = F[p];
+        render();
+      }
+      $("tThink").onclick = (e) => {
+        showThink = !showThink;
+        e.target.classList.toggle("on", showThink);
+        render();
+      };
+      $("tDiff").onclick = (e) => {
+        showDiff = !showDiff;
+        e.target.classList.toggle("on", showDiff);
+        render();
+      };
+      $("flag").onclick = () => {
+        flags.has(idx) ? flags.delete(idx) : flags.add(idx);
+        render();
+      };
+      $("exp").onclick = () => {
+        const a = document.createElement("a");
+        a.href = URL.createObjectURL(
+          new Blob(
+            [
+              [...flags]
+                .sort((a, b) => a - b)
+                .map((i) => JSON.stringify(rows[i]))
+                .join("\n"),
+            ],
+            { type: "application/jsonl" },
+          ),
+        );
+        a.download = "flagged.jsonl";
+        a.click();
+      };
+      $("q").oninput = (e) => {
+        query = e.target.value;
+        render();
+      };
+      $("open").onclick = () => $("file").click();
+      $("file").onchange = (e) => e.target.files[0]?.text().then(load);
+      addEventListener("dragover", (e) => e.preventDefault());
+      addEventListener("drop", (e) => {
+        e.preventDefault();
+        e.dataTransfer.files[0]?.text().then(load);
+      });
+      addEventListener("keydown", (e) => {
+        if (/INPUT|TEXTAREA/.test(document.activeElement.tagName)) return;
+        if (e.key === "ArrowRight") step(1);
+        if (e.key === "ArrowLeft") step(-1);
+        if (e.key === "t" || e.key === "T") $("tThink").click();
+        if (e.key === "d" || e.key === "D") $("tDiff").click();
+        if (e.key === "f" || e.key === "F") $("flag").click();
+      });
+      fetch("../data/filler.jsonl")
+        .then((r) => (r.ok ? r.text() : Promise.reject()))
+        .then(load)
+        .catch(() =>
+          fetch("data/filler.jsonl")
+            .then((r) => (r.ok ? r.text() : Promise.reject()))
+            .then(load)
+            .catch(() => {}),
+        );
+    </script>
+  </body>
+</html>

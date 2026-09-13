@@ -1,0 +1,293 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>kris data editor</title>
+    <style>
+      :root {
+        --bg: #0f1115;
+        --card: #171a21;
+        --line: #262b36;
+        --tx: #e8eaf0;
+        --mut: #9aa3b2;
+        --acc: #6ea8fe;
+      }
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        margin: 0;
+        background: var(--bg);
+        color: var(--tx);
+        font:
+          14px/1.5 system-ui,
+          sans-serif;
+      }
+      .wrap {
+        max-width: 960px;
+        margin: 0 auto;
+        padding: 24px;
+      }
+      h1 {
+        font-size: 20px;
+        margin: 0 0 4px;
+      }
+      p.sub {
+        color: var(--mut);
+        margin: 0 0 16px;
+      }
+      .grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 16px;
+      }
+      @media (max-width: 760px) {
+        .grid {
+          grid-template-columns: 1fr;
+        }
+      }
+      .card {
+        background: var(--card);
+        border: 1px solid var(--line);
+        border-radius: 12px;
+        padding: 16px;
+      }
+      label {
+        display: block;
+        font-size: 12px;
+        color: var(--mut);
+        margin: 12px 0 4px;
+      }
+      label:first-child {
+        margin-top: 0;
+      }
+      textarea,
+      input {
+        width: 100%;
+        background: #0c0e12;
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        color: var(--tx);
+        padding: 10px;
+        font:
+          13px/1.5 ui-monospace,
+          monospace;
+      }
+      textarea {
+        min-height: 90px;
+        resize: vertical;
+      }
+      #think {
+        min-height: 70px;
+        border-left: 3px solid var(--acc);
+      }
+      .row {
+        display: flex;
+        gap: 8px;
+        flex-wrap: wrap;
+        margin-top: 12px;
+      }
+      button {
+        background: #222838;
+        border: 1px solid var(--line);
+        color: var(--tx);
+        border-radius: 8px;
+        padding: 8px 14px;
+        cursor: pointer;
+        font-size: 13px;
+      }
+      button.pri {
+        background: var(--acc);
+        border-color: var(--acc);
+        color: #0b1220;
+        font-weight: 600;
+      }
+      button.dan {
+        color: #ff9a9a;
+      }
+      button:hover {
+        filter: brightness(1.15);
+      }
+      pre {
+        background: #0c0e12;
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        padding: 12px;
+        overflow: auto;
+        font-size: 12px;
+        max-height: 300px;
+        white-space: pre-wrap;
+      }
+      .item {
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        padding: 10px;
+        margin-top: 8px;
+        font-size: 12px;
+      }
+      .item .q {
+        color: var(--tx);
+      }
+      .item .a {
+        color: var(--mut);
+        white-space: pre-wrap;
+        max-height: 80px;
+        overflow: hidden;
+      }
+      .item .ops {
+        margin-top: 8px;
+        display: flex;
+        gap: 8px;
+      }
+      .count {
+        font-size: 12px;
+        color: var(--mut);
+        margin-top: 12px;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="wrap">
+      <h1>kris data editor</h1>
+      <p class="sub">
+        Visually build rows → exports to <code>data/sample.jsonl</code> format.
+      </p>
+      <div class="grid">
+        <div class="card">
+          <label>system</label>
+          <input
+            id="sys"
+            value="Reason step by step inside <think> tags, then give the final answer."
+          />
+          <label>user</label>
+          <textarea id="user" placeholder="Question or prompt..."></textarea>
+          <label>&lt;think&gt; reasoning (auto-wrapped)</label>
+          <textarea
+            id="think"
+            placeholder="Step by step reasoning..."
+          ></textarea>
+          <label>final answer (after &lt;/think&gt;)</label>
+          <textarea id="ans" placeholder="Final answer..."></textarea>
+          <div class="row">
+            <button class="pri" id="add">+ Add row</button>
+            <button id="clear">Clear</button>
+          </div>
+        </div>
+        <div class="card">
+          <label>live preview (one .jsonl line)</label>
+          <pre id="prev">{}</pre>
+          <div class="row">
+            <button id="dl">Download .jsonl</button>
+            <button id="copy">Copy all</button>
+            <button id="imp">Import .jsonl</button>
+            <input type="file" id="file" accept=".jsonl,.json" hidden />
+          </div>
+          <div class="count" id="count">0 rows</div>
+          <div id="list"></div>
+        </div>
+      </div>
+    </div>
+    <script>
+      const $ = (id) => document.getElementById(id);
+      let rows = JSON.parse(localStorage.getItem("kris-rows") || "[]");
+      let edit = -1;
+      const row = () => ({
+        messages: [
+          { role: "system", content: $("sys").value.trim() },
+          { role: "user", content: $("user").value.trim() },
+          {
+            role: "assistant",
+            content: `<think>${$("think").value.trim()}</think>\n${$("ans").value.trim()}`,
+          },
+        ],
+      });
+      const ok = (r) =>
+        r.messages[1].content &&
+        $("think").value.trim() &&
+        $("ans").value.trim();
+      function render() {
+        $("prev").textContent = JSON.stringify(row());
+        $("count").textContent =
+          `${rows.length} rows · ~${(rows.join("").length / 4) | 0} tokens`;
+        $("list").innerHTML = rows
+          .map(
+            (r, i) =>
+              `<div class="item"><div class="q"><b>#${i + 1}</b> ${esc(r.messages[1].content.slice(0, 120))}</div><div class="a">${esc(r.messages[2].content.slice(0, 200))}</div><div class="ops"><button onclick="ed(${i})">Edit</button><button class="dan" onclick="del(${i})">Delete</button></div></div>`,
+          )
+          .join("");
+        localStorage.setItem("kris-rows", JSON.stringify(rows));
+      }
+      const esc = (s) =>
+        s.replace(
+          /[&<>"]/g,
+          (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c],
+        );
+      window.ed = (i) => {
+        edit = i;
+        const m = rows[i].messages;
+        $("sys").value = m[0].content;
+        $("user").value = m[1].content;
+        const t = m[2].content.match(/<think>([\s\S]*?)<\/think>\s*([\s\S]*)/);
+        $("think").value = t ? t[1].trim() : "";
+        $("ans").value = t ? t[2].trim() : m[2].content;
+        $("add").textContent = "✓ Save edit";
+        window.scrollTo(0, 0);
+      };
+      window.del = (i) => {
+        rows.splice(i, 1);
+        render();
+      };
+      ["sys", "user", "think", "ans"].forEach((id) => ($(id).oninput = render));
+      $("add").onclick = () => {
+        const r = row();
+        if (!ok(r)) return alert("Fill user + think + answer.");
+        if (edit >= 0) {
+          rows[edit] = r;
+          edit = -1;
+          $("add").textContent = "+ Add row";
+        } else rows.push(r);
+        $("user").value = $("think").value = $("ans").value = "";
+        render();
+      };
+      $("clear").onclick = () => {
+        $("user").value = $("think").value = $("ans").value = "";
+        edit = -1;
+        $("add").textContent = "+ Add row";
+        render();
+      };
+      const text = () => rows.map((r) => JSON.stringify(r)).join("\n");
+      $("dl").onclick = () => {
+        const a = document.createElement("a");
+        a.href = URL.createObjectURL(
+          new Blob([text()], { type: "application/jsonl" }),
+        );
+        a.download = "sample.jsonl";
+        a.click();
+      };
+      $("copy").onclick = () =>
+        navigator.clipboard
+          .writeText(text())
+          .then(() => alert("Copied " + rows.length + " rows"));
+      $("imp").onclick = () => $("file").click();
+      $("file").onchange = (e) => {
+        const f = e.target.files[0];
+        if (!f) return;
+        const rd = new FileReader();
+        rd.onload = () => {
+          rd.result
+            .trim()
+            .split("\n")
+            .forEach((l) => {
+              try {
+                rows.push(JSON.parse(l));
+              } catch {}
+            });
+          render();
+        };
+        rd.readAsText(f);
+      };
+      render();
+    </script>
+  </body>
+</html>

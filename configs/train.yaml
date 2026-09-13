@@ -2,7 +2,7 @@ model_id: Qwen/Qwen3.5-0.8B
 out_dir: outputs/kris-sft
 
 # data: local jsonl by default, or set dataset_id for Hub
-data_path: data/sample.jsonl
+data_path: data/filler.jsonl
 dataset_id: "" # e.g. "trl-lib/Capybara"
 dataset_split: "train[:500]"
 messages_field: messages
