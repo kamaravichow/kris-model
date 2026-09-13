@@ -24,9 +24,12 @@ msgs = [
         "content": os.getenv("PROMPT", "3 boxes x 4 apples, sell 5. How many left?"),
     }
 ]
-inputs = tok.apply_chat_template(
+enc = tok.apply_chat_template(
     msgs, tokenize=True, add_generation_prompt=True, return_tensors="pt"
-).to(device)
+)
+# new transformers returns a BatchEncoding, older ones a Tensor — handle both
+inputs = enc["input_ids"] if not isinstance(enc, torch.Tensor) else enc
+inputs = inputs.to(device)
 with torch.no_grad():
     out = model.generate(
         inputs, max_new_tokens=256, do_sample=True, temperature=0.7, top_p=0.9
